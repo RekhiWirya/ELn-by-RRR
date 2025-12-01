@@ -1007,11 +1007,10 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           {currentStep === 0 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-2xl animate-[fadeIn_0.5s_ease-in]">
-              {/* Header Section with Gradient */}
+            <Card className="p-0 overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-2xl animate-[bounce_1.5s_ease-out]">{/* Header Section with Gradient */}
               <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
                 <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[fadeInUp_1s_ease-out]"
+                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInLeft_1.5s_ease-out]"
                   style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
                 >
                   📚 Materi Pembelajaran
@@ -1062,10 +1061,13 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
                   )}
 
                   <div className="prose max-w-none">
-                    <div className="whitespace-pre-line text-gray-800 leading-loose text-lg font-normal bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50 animate-[scaleIn_1.2s_ease-out]"
+                    <div className="whitespace-pre-line text-gray-800 leading-loose text-lg font-normal bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50 animate-[scaleIn_2s_ease-out] animation-delay-500"
                       style={{
                         fontFamily: '"Georgia", "Times New Roman", serif',
                         lineHeight: "1.8",
+                        animationDelay: "0.5s",
+                        opacity: 0,
+                        animationFillMode: "forwards"
                       }}
                     >
                       {lesson.content.text}
@@ -1088,11 +1090,11 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
           )}
 
           {currentStep === 1 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 shadow-2xl animate-[fadeIn_0.5s_ease-in]">
+            <Card className="p-0 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 shadow-2xl animate-[bounce_1.5s_ease-out]">
               {/* Header Section */}
               <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 p-6">
                 <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[fadeInUp_1s_ease-out]"
+                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInRight_1.5s_ease-out]"
                   style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
                 >
                   📖 Vocabulary
@@ -1148,11 +1150,11 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
           )}
 
           {currentStep === 2 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-2xl animate-[fadeIn_0.5s_ease-in]">
+            <Card className="p-0 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-2xl animate-[bounce_1.5s_ease-out]">
               {/* Header Section */}
               <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 p-6">
                 <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[fadeInUp_1s_ease-out]"
+                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInLeft_1.5s_ease-out]"
                   style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
                 >
                   🎯 Quiz Time!
