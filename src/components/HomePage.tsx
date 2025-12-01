@@ -1,7 +1,15 @@
-import { BookOpen, Users, Award, TrendingUp, ArrowRight, Video } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  Award,
+  TrendingUp,
+  ArrowRight,
+  Video,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { RotatingText } from "./ui/RotatingText";
 
 interface HomePageProps {
   onNavigate: (page: string) => void;
@@ -51,6 +59,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <div className="container mx-auto px-4 py-20">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="animate-slide-in-left">
+              <div className="mb-6">
+                <RotatingText
+                  texts={[
+                    "Belajar Bahasa Inggris",
+                    "Master English",
+                    "Learn with Fun",
+                    "Speak Confidently",
+                  ]}
+                  rotationInterval={3000}
+                  className="text-2xl font-bold text-orange-200"
+                />
+              </div>
               <h1 className="text-5xl mb-6 font-extrabold leading-tight">
                 Kuasai Bahasa Inggris dengan Mudah dan Menyenangkan
               </h1>
@@ -129,12 +149,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   className="p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-4 cursor-pointer group border-2 border-transparent hover:border-primary/30 animate-fade-in-up hover-shine"
                   style={{ animationDelay: `${index * 0.15}s` }}
                 >
-                  <div className={`h-12 w-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300 ${
-                    feature.link ? 'bg-gradient-to-br from-purple-100 to-pink-100 group-hover:from-purple-500 group-hover:to-pink-500 animate-gradient' : 'bg-orange-50 group-hover:bg-primary'
-                  }`}>
-                    <Icon className={`h-6 w-6 transition-colors ${
-                      feature.link ? 'text-purple-600 group-hover:text-white' : 'text-primary group-hover:text-white'
-                    }`} />
+                  <div
+                    className={`h-12 w-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300 ${
+                      feature.link
+                        ? "bg-gradient-to-br from-purple-100 to-pink-100 group-hover:from-purple-500 group-hover:to-pink-500 animate-gradient"
+                        : "bg-orange-50 group-hover:bg-primary"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-6 w-6 transition-colors ${
+                        feature.link
+                          ? "text-purple-600 group-hover:text-white"
+                          : "text-primary group-hover:text-white"
+                      }`}
+                    />
                   </div>
                   <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                     {feature.title}
@@ -159,7 +187,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <h2 className="text-4xl mb-6 font-extrabold animate-scale-in">
             Siap Mulai Perjalanan Bahasa Inggris Anda?
           </h2>
-          <p className="text-xl mb-8 text-orange-50 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <p
+            className="text-xl mb-8 text-orange-50 animate-fade-in"
+            style={{ animationDelay: "0.2s" }}
+          >
             Bergabunglah dengan ribuan siswa yang telah meningkatkan kemampuan
             bahasa Inggris mereka
           </p>

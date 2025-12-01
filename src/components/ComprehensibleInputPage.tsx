@@ -1,29 +1,97 @@
-import { useState, useRef } from "react";
-import { ArrowLeft, Play, BookOpen, Video, Headphones } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  ArrowLeft,
+  Play,
+  BookOpen,
+  Video,
+  Headphones,
+  Plus,
+  Trash2,
+  Edit,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { VideoPlayer } from "./VideoPlayer";
-import { InteractiveTranscript, TranscriptSegment } from "./InteractiveTranscript";
+import {
+  InteractiveTranscript,
+  TranscriptSegment,
+} from "./InteractiveTranscript";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { toast } from "sonner@2.0.3";
 
 interface ComprehensibleInputPageProps {
   onBack: () => void;
 }
 
-export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps) {
+interface VideoData {
+  id: number;
+  title: string;
+  level: string;
+  duration: string;
+  description: string;
+  videoUrl: string;
+  thumbnail: string;
+  transcript: TranscriptSegment[];
+  isUserAdded?: boolean;
+}
+
+export function ComprehensibleInputPage({
+  onBack,
+}: ComprehensibleInputPageProps) {
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState(0);
+  const [customVideos, setCustomVideos] = useState<VideoData[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const videoPlayerRef = useRef<HTMLVideoElement>(null);
 
-  const videos = [
+  // Form states
+  const [newVideoTitle, setNewVideoTitle] = useState("");
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newVideoLevel, setNewVideoLevel] = useState("Beginner");
+  const [newVideoDescription, setNewVideoDescription] = useState("");
+  const [newVideoThumbnail, setNewVideoThumbnail] = useState("");
+  const [newTranscriptText, setNewTranscriptText] = useState("");
+
+  // Load custom videos from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("customVideos");
+    if (saved) {
+      try {
+        setCustomVideos(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load custom videos", e);
+      }
+    }
+  }, []);
+
+  // Save custom videos to localStorage
+  useEffect(() => {
+    if (customVideos.length > 0) {
+      localStorage.setItem("customVideos", JSON.stringify(customVideos));
+    }
+  }, [customVideos]);
+
+  const defaultVideos: VideoData[] = [
     {
       id: 1,
       title: "Daily Conversation: At the Coffee Shop",
       level: "Beginner",
       duration: "3:24",
-      description: "Learn how to order coffee and have casual conversations at a coffee shop.",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      thumbnail: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+      description:
+        "Learn how to order coffee and have casual conversations at a coffee shop.",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      thumbnail:
+        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
       transcript: [
         {
           id: 1,
@@ -67,9 +135,12 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
       title: "Business Meeting: Project Discussion",
       level: "Intermediate",
       duration: "5:12",
-      description: "Professional vocabulary and phrases used in business meetings.",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-      thumbnail: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400",
+      description:
+        "Professional vocabulary and phrases used in business meetings.",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      thumbnail:
+        "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400",
       transcript: [
         {
           id: 1,
@@ -106,9 +177,12 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
       title: "Travel English: At the Airport",
       level: "Intermediate",
       duration: "4:45",
-      description: "Essential phrases and vocabulary for traveling through airports.",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      thumbnail: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400",
+      description:
+        "Essential phrases and vocabulary for traveling through airports.",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      thumbnail:
+        "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400",
       transcript: [
         {
           id: 1,
@@ -146,8 +220,10 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
       level: "Advanced",
       duration: "6:30",
       description: "Advanced vocabulary for academic discussions and debates.",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      thumbnail: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      thumbnail:
+        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400",
       transcript: [
         {
           id: 1,
@@ -174,7 +250,68 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
     },
   ];
 
-  const currentVideo = videos[selectedVideo];
+  const allVideos = [...defaultVideos, ...customVideos];
+
+  const handleAddVideo = () => {
+    if (!newVideoTitle || !newVideoUrl) {
+      toast.error("Judul dan URL video wajib diisi!");
+      return;
+    }
+
+    // Parse transcript dari textarea (format: "startTime-endTime|speaker|text")
+    const transcriptLines = newTranscriptText.trim().split("\n");
+    const parsedTranscript: TranscriptSegment[] = transcriptLines
+      .filter((line) => line.trim())
+      .map((line, index) => {
+        const parts = line.split("|");
+        const times = parts[0]?.split("-") || ["0", "5"];
+        return {
+          id: index + 1,
+          startTime: parseInt(times[0]) || 0,
+          endTime: parseInt(times[1]) || 5,
+          speaker: parts[1]?.trim() || "Speaker",
+          text: parts[2]?.trim() || line,
+        };
+      });
+
+    const newVideo: VideoData = {
+      id: Date.now(),
+      title: newVideoTitle,
+      level: newVideoLevel,
+      duration: "Custom",
+      description: newVideoDescription || "Video pembelajaran kustom",
+      videoUrl: newVideoUrl,
+      thumbnail:
+        newVideoThumbnail ||
+        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400",
+      transcript: parsedTranscript.length > 0 ? parsedTranscript : [],
+      isUserAdded: true,
+    };
+
+    setCustomVideos([...customVideos, newVideo]);
+    setShowAddDialog(false);
+
+    // Reset form
+    setNewVideoTitle("");
+    setNewVideoUrl("");
+    setNewVideoLevel("Beginner");
+    setNewVideoDescription("");
+    setNewVideoThumbnail("");
+    setNewTranscriptText("");
+
+    toast.success("Video berhasil ditambahkan!");
+  };
+
+  const handleDeleteVideo = (videoId: number) => {
+    setCustomVideos(customVideos.filter((v) => v.id !== videoId));
+    const currentVid = allVideos[selectedVideo];
+    if (currentVid?.id === videoId && selectedVideo > 0) {
+      setSelectedVideo(0);
+    }
+    toast.success("Video berhasil dihapus!");
+  };
+
+  const currentVideo = allVideos[selectedVideo];
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -192,22 +329,24 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-10 shadow-sm">
+      <div className="bg-white/90 backdrop-blur-lg border-b sticky top-[73px] z-40 shadow-md">
         <div className="container mx-auto px-4 py-4">
           <Button variant="ghost" onClick={onBack} className="gap-2 mb-4">
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Button>
-          
-          <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-lg">
+
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-lg shadow-lg">
               <Video className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
                 Comprehensible Input
               </h1>
-              <p className="text-gray-600">Belajar melalui video dengan subtitle interaktif</p>
+              <p className="text-gray-600 font-medium">
+                Belajar melalui video dengan subtitle interaktif
+              </p>
             </div>
           </div>
         </div>
@@ -217,14 +356,136 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Video List Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-24">
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="h-5 w-5 text-purple-600" />
-                <h3 className="text-xl font-bold">Video Lessons</h3>
+            <Card className="p-6 sticky top-[200px]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-xl font-bold">Video Lessons</h3>
+                </div>
+
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Tambah
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Tambah Video Pembelajaran</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Judul Video *
+                        </label>
+                        <Input
+                          placeholder="Contoh: Daily Conversation at Restaurant"
+                          value={newVideoTitle}
+                          onChange={(e) => setNewVideoTitle(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          URL Video * (YouTube/Direct Link)
+                        </label>
+                        <Input
+                          placeholder="https://youtube.com/watch?v=..."
+                          value={newVideoUrl}
+                          onChange={(e) => setNewVideoUrl(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Format YouTube:
+                          https://www.youtube.com/watch?v=VIDEO_ID
+                        </p>
+                        <p className="text-xs text-orange-600 mt-1">
+                          ⚠️ Catatan: Beberapa video YouTube tidak bisa di-embed
+                          karena pembatasan dari pemilik video
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            Level
+                          </label>
+                          <select
+                            className="w-full border rounded-md p-2"
+                            value={newVideoLevel}
+                            onChange={(e) => setNewVideoLevel(e.target.value)}
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            URL Thumbnail (opsional)
+                          </label>
+                          <Input
+                            placeholder="https://..."
+                            value={newVideoThumbnail}
+                            onChange={(e) =>
+                              setNewVideoThumbnail(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Deskripsi
+                        </label>
+                        <Textarea
+                          placeholder="Deskripsi singkat tentang video ini..."
+                          value={newVideoDescription}
+                          onChange={(e) =>
+                            setNewVideoDescription(e.target.value)
+                          }
+                          rows={3}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Transcript (opsional)
+                        </label>
+                        <Textarea
+                          placeholder={
+                            "Format per baris:\n0-7|Speaker Name|Text yang diucapkan\n7-12|Speaker 2|Text lainnya"
+                          }
+                          value={newTranscriptText}
+                          onChange={(e) => setNewTranscriptText(e.target.value)}
+                          rows={6}
+                          className="font-mono text-xs"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Format: waktu_mulai-waktu_akhir|nama_speaker|teks
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2 justify-end pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAddDialog(false)}
+                        >
+                          Batal
+                        </Button>
+                        <Button onClick={handleAddVideo}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Tambah Video
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
-              
+
               <div className="space-y-3">
-                {videos.map((video, index) => (
+                {allVideos.map((video, index) => (
                   <Card
                     key={video.id}
                     onClick={() => setSelectedVideo(index)}
@@ -245,18 +506,41 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
                           <Play className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm mb-1 line-clamp-2">
                           {video.title}
                         </h4>
                         <div className="flex items-center gap-2">
-                          <Badge className={`text-xs ${getLevelColor(video.level)}`}>
+                          <Badge
+                            className={`text-xs ${getLevelColor(video.level)}`}
+                          >
                             {video.level}
                           </Badge>
-                          <span className="text-xs text-gray-500">{video.duration}</span>
+                          <span className="text-xs text-gray-500">
+                            {video.duration}
+                          </span>
+                          {video.isUserAdded && (
+                            <Badge variant="outline" className="text-xs">
+                              Custom
+                            </Badge>
+                          )}
                         </div>
                       </div>
+
+                      {video.isUserAdded && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteVideo(video.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -267,7 +551,9 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
                 <div className="flex items-start gap-3">
                   <Headphones className="h-5 w-5 text-purple-600 mt-1" />
                   <div>
-                    <h4 className="font-bold text-sm mb-1 text-purple-900">Tips Belajar</h4>
+                    <h4 className="font-bold text-sm mb-1 text-purple-900">
+                      Tips Belajar
+                    </h4>
                     <ul className="text-xs text-purple-800 space-y-1">
                       <li>• Tonton dengan subtitle</li>
                       <li>• Klik teks untuk loncat</li>
@@ -286,23 +572,31 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
             <Card className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">{currentVideo.title}</h2>
-                  <p className="text-gray-600 mb-3">{currentVideo.description}</p>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {currentVideo.title}
+                  </h2>
+                  <p className="text-gray-600 mb-3">
+                    {currentVideo.description}
+                  </p>
                   <div className="flex items-center gap-3">
                     <Badge className={getLevelColor(currentVideo.level)}>
                       {currentVideo.level}
                     </Badge>
-                    <span className="text-sm text-gray-500">Duration: {currentVideo.duration}</span>
+                    <span className="text-sm text-gray-500">
+                      Duration: {currentVideo.duration}
+                    </span>
                   </div>
                 </div>
               </div>
             </Card>
 
             {/* Video Player */}
-            <VideoPlayer
-              videoUrl={currentVideo.videoUrl}
-              onTimeUpdate={setCurrentVideoTime}
-            />
+            <Card className="overflow-hidden">
+              <VideoPlayer
+                videoUrl={currentVideo.videoUrl}
+                onTimeUpdate={setCurrentVideoTime}
+              />
+            </Card>
 
             {/* Interactive Transcript */}
             <InteractiveTranscript
@@ -317,11 +611,14 @@ export function ComprehensibleInputPage({ onBack }: ComprehensibleInputPageProps
 
             {/* Learning Notes */}
             <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200">
-              <h3 className="text-xl font-bold mb-4 text-blue-900">📝 Catatan Pembelajaran</h3>
+              <h3 className="text-xl font-bold mb-4 text-blue-900">
+                📝 Catatan Pembelajaran
+              </h3>
               <div className="space-y-3 text-sm text-blue-800">
                 <p>
-                  <strong>Comprehensible Input</strong> adalah metode pembelajaran bahasa di mana Anda
-                  belajar melalui konten yang sedikit di atas level pemahaman Anda saat ini.
+                  <strong>Comprehensible Input</strong> adalah metode
+                  pembelajaran bahasa di mana Anda belajar melalui konten yang
+                  sedikit di atas level pemahaman Anda saat ini.
                 </p>
                 <p>
                   <strong>Cara Efektif:</strong>

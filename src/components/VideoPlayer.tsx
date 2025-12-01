@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Settings } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Settings,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 import {
@@ -31,6 +38,32 @@ export function VideoPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showControls, setShowControls] = useState(true);
+
+  // Convert YouTube URL to embed format
+  const getEmbedUrl = (url: string) => {
+    if (!url) return url;
+
+    // Already embed format
+    if (url.includes("/embed/")) return url;
+
+    // Standard YouTube watch URL
+    const watchMatch = url.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+    );
+    if (watchMatch) {
+      return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    }
+
+    return url;
+  };
+
+  const embedUrl = getEmbedUrl(videoUrl);
+
+  // Detect if URL is YouTube/embed
+  const isYouTubeOrEmbed =
+    embedUrl.includes("youtube.com") ||
+    embedUrl.includes("youtu.be") ||
+    embedUrl.includes("embed");
 
   useEffect(() => {
     const video = videoRef.current;
@@ -123,119 +156,133 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className="relative bg-black rounded-lg overflow-hidden group"
+      className="relative bg-black w-full rounded-lg overflow-hidden group"
+      style={{ aspectRatio: "16 / 9" }}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(isPlaying ? false : true)}
     >
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        className="w-full aspect-video"
-        onClick={togglePlay}
-      />
+      {isYouTubeOrEmbed ? (
+        // YouTube/Embed iframe
+        <iframe
+          src={embedUrl}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      ) : (
+        // Direct video file
+        <video
+          ref={videoRef}
+          src={embedUrl}
+          className="w-full h-full border-0"
+          onClick={togglePlay}
+        />
+      )}
 
-      {/* Controls Overlay */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transition-opacity duration-300 ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        {/* Progress Bar */}
-        <div className="mb-3">
-          <Slider
-            value={[currentTime]}
-            min={0}
-            max={duration || 100}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="cursor-pointer"
-          />
-        </div>
+      {/* Controls Overlay - Only show for direct video */}
+      {!isYouTubeOrEmbed && (
+        <div
+          className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {/* Progress Bar */}
+          <div className="mb-3">
+            <Slider
+              value={[currentTime]}
+              min={0}
+              max={duration || 100}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="cursor-pointer"
+            />
+          </div>
 
-        <div className="flex items-center justify-between gap-4">
-          {/* Left Controls */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePlay}
-              className="text-white hover:bg-white/20 hover:text-white"
-            >
-              {isPlaying ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5" />
-              )}
-            </Button>
-
-            <div className="flex items-center gap-2 group/volume">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left Controls */}
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleMute}
+                onClick={togglePlay}
                 className="text-white hover:bg-white/20 hover:text-white"
               >
-                {isMuted ? (
-                  <VolumeX className="h-5 w-5" />
+                {isPlaying ? (
+                  <Pause className="h-5 w-5" />
                 ) : (
-                  <Volume2 className="h-5 w-5" />
+                  <Play className="h-5 w-5" />
                 )}
               </Button>
-              <div className="w-0 group-hover/volume:w-24 transition-all duration-300 overflow-hidden">
-                <Slider
-                  value={[isMuted ? 0 : volume]}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onValueChange={handleVolumeChange}
-                />
-              </div>
-            </div>
 
-            <span className="text-white text-sm font-medium">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-          </div>
-
-          {/* Right Controls */}
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-2 group/volume">
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={toggleMute}
                   className="text-white hover:bg-white/20 hover:text-white"
                 >
-                  <Settings className="h-5 w-5" />
+                  {isMuted ? (
+                    <VolumeX className="h-5 w-5" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <div className="px-2 py-1 text-sm font-semibold">
-                  Playback Speed
+                <div className="w-0 group-hover/volume:w-24 transition-all duration-300 overflow-hidden">
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onValueChange={handleVolumeChange}
+                  />
                 </div>
-                {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                  <DropdownMenuItem
-                    key={rate}
-                    onClick={() => changePlaybackRate(rate)}
-                    className={playbackRate === rate ? "bg-primary/10" : ""}
-                  >
-                    {rate}x {playbackRate === rate && "✓"}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleFullscreen}
-              className="text-white hover:bg-white/20 hover:text-white"
-            >
-              <Maximize className="h-5 w-5" />
-            </Button>
+              <span className="text-white text-sm font-medium">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
+
+            {/* Right Controls */}
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 hover:text-white"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <div className="px-2 py-1 text-sm font-semibold">
+                    Playback Speed
+                  </div>
+                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                    <DropdownMenuItem
+                      key={rate}
+                      onClick={() => changePlaybackRate(rate)}
+                      className={playbackRate === rate ? "bg-primary/10" : ""}
+                    >
+                      {rate}x {playbackRate === rate && "✓"}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                className="text-white hover:bg-white/20 hover:text-white"
+              >
+                <Maximize className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
