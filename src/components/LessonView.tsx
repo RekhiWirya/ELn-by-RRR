@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useState, useRef } from "react";
 import { VideoPlayer } from "./VideoPlayer";
 import { InteractiveTranscript } from "./InteractiveTranscript";
-import { AnimatedText } from "./ui/AnimatedText";
 
 interface TranscriptSegment {
   id: number;
@@ -1023,18 +1022,18 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
 
               {/* Content Section */}
               <div className="p-8">
-                  {/* Only show text content, remove video and transcript */}
+                  {/* Text content with simple animation */}
                   <div className="prose max-w-none">
-                    <AnimatedText
-                      containerClassName="mb-8"
-                      textClassName="text-gray-800 leading-loose font-normal text-lg"
-                      scrollStart="top bottom-=10%"
-                      scrollEnd="center center+=20%"
-                      stagger={0.005}
-                      animationDuration={0.6}
+                    <div 
+                      className="whitespace-pre-line text-gray-800 leading-loose text-lg font-normal bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50"
+                      style={{
+                        fontFamily: '"Georgia", "Times New Roman", serif',
+                        lineHeight: "1.8",
+                        animation: "fadeInUp 1.5s ease-out"
+                      }}
                     >
                       {lesson.content.text}
-                    </AnimatedText>
+                    </div>
                   </div>
 
                   {/* Action Button */}
