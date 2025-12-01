@@ -1065,14 +1065,23 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
                   )}
 
                   <div className="prose max-w-none">
-                    <div
-                      className="whitespace-pre-line text-gray-800 leading-loose text-lg font-normal animate-[fadeInUp_0.8s_ease-out] bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50"
-                      style={{
-                        fontFamily: '"Georgia", "Times New Roman", serif',
-                        lineHeight: "1.8",
-                      }}
-                    >
-                      {lesson.content.text}
+                    <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50">
+                      {lesson.content.text.split('\n\n').map((paragraph, index) => (
+                        paragraph.trim() && (
+                          <div key={index} className="mb-6 last:mb-0">
+                            <AnimatedText
+                              containerClassName="overflow-visible"
+                              textClassName="text-gray-800 leading-loose font-normal"
+                              scrollStart="top bottom-=20%"
+                              scrollEnd="center center"
+                              stagger={0.01}
+                              animationDuration={0.8}
+                            >
+                              {paragraph}
+                            </AnimatedText>
+                          </div>
+                        )
+                      ))}
                     </div>
                   </div>
 

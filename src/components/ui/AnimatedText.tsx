@@ -83,8 +83,8 @@ export function AnimatedText({
   return (
     <h2 ref={containerRef} className={`overflow-hidden ${containerClassName}`}>
       <span
-        className={`inline-block text-center leading-relaxed font-black ${textClassName}`}
-        style={{ fontSize: 'clamp(1.6rem, 8vw, 10rem)' }}
+        className={`inline-block leading-relaxed font-black ${textClassName}`}
+        style={{ fontSize: textClassName.includes('text-') ? undefined : 'clamp(1.6rem, 8vw, 10rem)' }}
       >
         {splitText.map((char, index) => (
           <span key={index} className="inline-block char">
