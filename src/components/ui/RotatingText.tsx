@@ -15,7 +15,7 @@ interface RotatingTextProps {
 export function RotatingText({
   texts,
   rotationInterval = 2000,
-  staggerDuration = 0.03,
+  staggerDuration = 0.015,
   loop = true,
   auto = true,
   className = "",
@@ -43,9 +43,9 @@ export function RotatingText({
   }, [auto, rotationInterval, next]);
 
   const currentText = texts[currentIndex];
-  
+
   // Split by lines first to preserve line breaks
-  const lines = currentText.split('\n');
+  const lines = currentText.split("\n");
 
   return (
     <div className={`${className}`}>
@@ -62,10 +62,16 @@ export function RotatingText({
               {line.split(" ").map((word, wordIndex) => (
                 <span key={wordIndex} className="inline-flex mr-1">
                   {word.split("").map((char, charIndex) => {
-                    const totalCharsBeforeLine = lines.slice(0, lineIndex).join(' ').length;
-                    const totalCharsInLine = line.split(" ").slice(0, wordIndex).join(' ').length;
-                    const globalCharIndex = totalCharsBeforeLine + totalCharsInLine + charIndex;
-                    
+                    const totalCharsBeforeLine = lines
+                      .slice(0, lineIndex)
+                      .join(" ").length;
+                    const totalCharsInLine = line
+                      .split(" ")
+                      .slice(0, wordIndex)
+                      .join(" ").length;
+                    const globalCharIndex =
+                      totalCharsBeforeLine + totalCharsInLine + charIndex;
+
                     return (
                       <motion.span
                         key={`${lineIndex}-${wordIndex}-${charIndex}`}
@@ -74,8 +80,8 @@ export function RotatingText({
                         exit={{ y: -20, opacity: 0 }}
                         transition={{
                           type: "spring",
-                          damping: 25,
-                          stiffness: 300,
+                          damping: 20,
+                          stiffness: 500,
                           delay: globalCharIndex * staggerDuration,
                         }}
                         className="inline-block"

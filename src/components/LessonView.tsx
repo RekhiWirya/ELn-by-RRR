@@ -3,10 +3,224 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { useState, useRef } from "react";
-import { VideoPlayer } from "./VideoPlayer";
-import { InteractiveTranscript } from "./InteractiveTranscript";
-import { RotatingText } from "./ui/RotatingText";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import "./MagicBento.css";
+import classroomImage from "../assets/classroom-teaching.jpg.png";
+import studyGroupImage from "../assets/study-group.jpg.png";
+
+// Helper types for MagicBento
+type CardTheme =
+  | "purple"
+  | "orange"
+  | "green"
+  | "blue"
+  | "pink"
+  | "cyan"
+  | "yellow"
+  | "red";
+
+interface MaterialSection {
+  title: string;
+  content: string;
+  label: string;
+  theme: CardTheme;
+  fullWidth?: boolean;
+}
+
+const getGlowColor = (theme: CardTheme): string => {
+  const colors: Record<CardTheme, string> = {
+    purple: "147, 51, 234",
+    orange: "249, 115, 22",
+    green: "34, 197, 94",
+    blue: "59, 130, 246",
+    pink: "236, 72, 153",
+    cyan: "6, 182, 212",
+    yellow: "234, 179, 8",
+    red: "239, 68, 68",
+  };
+  return colors[theme] || colors.purple;
+};
+
+// Magic Particle Card Component
+const MagicCard: React.FC<{
+  children: React.ReactNode;
+  theme: CardTheme;
+  className?: string;
+  fullWidth?: boolean;
+}> = ({ children, theme, className = "", fullWidth = false }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const glowColor = getGlowColor(theme);
+
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = element.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+      element.style.setProperty("--glow-x", `${x}%`);
+      element.style.setProperty("--glow-y", `${y}%`);
+      element.style.setProperty("--glow-intensity", "1");
+
+      // Tilt effect
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((e.clientY - rect.top - centerY) / centerY) * -5;
+      const rotateY = ((e.clientX - rect.left - centerX) / centerX) * 5;
+      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+    };
+
+    const handleMouseLeave = () => {
+      element.style.setProperty("--glow-intensity", "0");
+      element.style.transform =
+        "perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)";
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      const rect = element.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const maxDistance = Math.max(
+        Math.hypot(x, y),
+        Math.hypot(x - rect.width, y),
+        Math.hypot(x, y - rect.height),
+        Math.hypot(x - rect.width, y - rect.height)
+      );
+
+      const ripple = document.createElement("div");
+      ripple.style.cssText = `
+        position: absolute;
+        width: ${maxDistance * 2}px;
+        height: ${maxDistance * 2}px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(${glowColor}, 0.4) 0%, rgba(${glowColor}, 0.2) 30%, transparent 70%);
+        left: ${x - maxDistance}px;
+        top: ${y - maxDistance}px;
+        pointer-events: none;
+        z-index: 1000;
+        transform: scale(0);
+        opacity: 1;
+        transition: transform 0.8s ease, opacity 0.8s ease;
+      `;
+
+      element.appendChild(ripple);
+      requestAnimationFrame(() => {
+        ripple.style.transform = "scale(1)";
+        ripple.style.opacity = "0";
+      });
+      setTimeout(() => ripple.remove(), 800);
+    };
+
+    element.addEventListener("mousemove", handleMouseMove);
+    element.addEventListener("mouseleave", handleMouseLeave);
+    element.addEventListener("click", handleClick);
+
+    return () => {
+      element.removeEventListener("mousemove", handleMouseMove);
+      element.removeEventListener("mouseleave", handleMouseLeave);
+      element.removeEventListener("click", handleClick);
+    };
+  }, [glowColor]);
+
+  return (
+    <div
+      ref={cardRef}
+      className={`magic-bento-card magic-bento-card--border-glow ${
+        fullWidth ? "full-width" : ""
+      } ${className}`}
+      data-theme={theme}
+      style={{
+        transition: "transform 0.2s ease, box-shadow 0.3s ease",
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Parse lesson content into sections
+const parseLessonSections = (text: string): MaterialSection[] => {
+  const sections: MaterialSection[] = [];
+  const themes: CardTheme[] = [
+    "purple",
+    "orange",
+    "green",
+    "blue",
+    "pink",
+    "cyan",
+    "yellow",
+    "red",
+  ];
+  const labels = [
+    "📚 Materi",
+    "👋 Sapaan",
+    "🙋 Perkenalan",
+    "📝 Grammar",
+    "📖 Kosakata",
+    "💬 Kalimat",
+    "🗣️ Percakapan",
+    "🚀 Tips",
+  ];
+
+  // Split by section headers (lines starting with │ and containing numbers like "1.", "2.", etc.)
+  const sectionRegex = /┌[─]+┐\s*\n│\s*(\d+)\.\s*([^│]+)│\s*\n└[─]+┘/g;
+  let match;
+  let lastIndex = 0;
+  let sectionIndex = 0;
+
+  const matches: { index: number; title: string; number: string }[] = [];
+
+  while ((match = sectionRegex.exec(text)) !== null) {
+    matches.push({
+      index: match.index,
+      number: match[1],
+      title: match[2].trim(),
+    });
+  }
+
+  for (let i = 0; i < matches.length; i++) {
+    const currentMatch = matches[i];
+    const nextMatch = matches[i + 1];
+
+    const startIndex = currentMatch.index;
+    const endIndex = nextMatch ? nextMatch.index : text.length;
+
+    let content = text.slice(startIndex, endIndex).trim();
+
+    // Remove the header box from content
+    content = content.replace(/┌[─]+┐\s*\n│[^│]+│\s*\n└[─]+┘\s*\n?/, "").trim();
+
+    // Clean up the content - remove excessive decoration
+    content = content.replace(/━+/g, "").replace(/─+/g, "").trim();
+
+    sections.push({
+      title: `${currentMatch.number}. ${currentMatch.title}`,
+      content: content,
+      label: labels[sectionIndex % labels.length],
+      theme: themes[sectionIndex % themes.length],
+      fullWidth: content.length > 400, // Make larger content full width
+    });
+
+    sectionIndex++;
+  }
+
+  // If no sections found, return single section with all content
+  if (sections.length === 0) {
+    sections.push({
+      title: "Materi Pembelajaran",
+      content: text,
+      label: "📚 Materi",
+      theme: "purple",
+      fullWidth: true,
+    });
+  }
+
+  return sections;
+};
 
 interface TranscriptSegment {
   id: number;
@@ -88,7 +302,8 @@ Mari kita mulai perjalanan belajar bahasa Inggris Anda!`,
     2: {
       title: "Basic Greetings & Introductions",
       duration: "12 menit",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
       transcript: [
         {
           id: 1,
@@ -166,7 +381,8 @@ Coba perkenalkan diri Anda dalam bahasa Inggris menggunakan format di atas. Ulan
     3: {
       title: "Practice: Self Introduction",
       duration: "10 menit",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
       transcript: [
         {
           id: 1,
@@ -263,11 +479,242 @@ Key Phrases:
         },
       },
     },
-    // Intermediate English Mastery - Lesson 1
+    // English for Beginners - Lesson 4: Alphabet & Pronunciation
     4: {
+      title: "English Alphabet A-Z",
+      duration: "15 menit",
+      content: {
+        text: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚  ENGLISH FOR BEGINNERS - Complete Guide
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+┌───────────────────────────────────────────────┐
+│  1. ALPHABET & PRONUNCIATION                  │
+└───────────────────────────────────────────────┘
+
+A – /ei/           N – /en/
+B – /bi/           O – /oʊ/
+C – /si/           P – /pi/
+D – /di/           Q – /kjuː/
+E – /i/            R – /ar/
+F – /ef/           S – /es/
+G – /dʒi/          T – /ti/
+H – /eɪtʃ/         U – /juː/
+I – /ai/           V – /vi/
+J – /dʒei/         W – /dʌbəl ju/
+K – /kei/          X – /eks/
+L – /el/           Y – /wai/
+M – /em/           Z – /zed/ (UK) / /zee/ (US)
+
+
+┌───────────────────────────────────────────────┐
+│  2. GREETINGS (Sapaan)                        │
+└───────────────────────────────────────────────┘
+
+English              Indonesian
+─────────────────────────────────────────────────
+Hello                Halo
+Hi                   Hai
+Good morning         Selamat pagi
+Good afternoon       Selamat siang
+Good evening         Selamat malam
+Goodbye              Sampai jumpa
+See you              Sampai ketemu
+
+
+┌───────────────────────────────────────────────┐
+│  3. INTRODUCING YOURSELF                      │
+└───────────────────────────────────────────────┘
+
+📝 Basic Structure:
+
+•  My name is … (Nama saya …)
+•  I am from … (Saya dari …)
+•  I am … years old. (Saya berusia … tahun)
+•  I am a student / teacher / worker.
+
+💬 Example:
+
+"Hello, my name is Riann. I am from Indonesia.
+I am a student."
+
+┌─────────────────────────────────────────┐
+│  4. BASIC GRAMMAR                       │
+└─────────────────────────────────────────┘
+
+
+📌 4.1 Subject Pronouns
+
+Subject          Meaning
+─────────────────────────────────────────
+I                Saya
+You              Kamu
+He               Dia (laki-laki)
+She              Dia (perempuan)
+It               Itu (benda/hewan)
+We               Kami/Kita
+They             Mereka
+
+
+📌 4.2 Verb "To Be"
+
+Subject              To Be
+─────────────────────────────────────────
+I                    am
+You / We / They      are
+He / She / It        is
+
+Examples:
+
+✓  I am happy.
+✓  You are a student.
+✓  She is my friend.
+
+
+📌 4.3 Simple Present (Kebiasaan / Fakta)
+
+Formula:
+🔹  Subject + Verb 1
+🔹  Jika He/She/It → Verb + s/es
+
+Examples:
+
+✓  I play football.
+✓  She plays piano.
+✓  They study English.
+
+
+📌 4.4 Simple Past (Kejadian lampau)
+
+Formula:
+🔹  Subject + Verb 2
+
+Examples:
+
+✓  I went to school yesterday.
+✓  She cooked noodles.
+
+
+┌───────────────────────────────────────────────┐
+│  5. VOCABULARY FOR BEGINNERS                  │
+└───────────────────────────────────────────────┘
+
+
+📗 Daily Activities:
+
+•  Wake up = Bangun tidur
+•  Eat = Makan
+•  Study = Belajar
+•  Work = Bekerja
+•  Sleep = Tidur
+•  Cook = Memasak
+•  Walk = Berjalan
+
+
+📘 Common Objects:
+
+•  Book = Buku
+•  Table = Meja
+•  Phone = HP
+•  Bag = Tas
+•  Chair = Kursi
+
+
+📙 Numbers 1-10:
+
+one, two, three, four, five, 
+six, seven, eight, nine, ten.
+
+
+┌───────────────────────────────────────────────┐
+│  6. BASIC SENTENCES                           │
+└───────────────────────────────────────────────┘
+
+✓  I like English.
+✓  This is my book.
+✓  Where are you going?
+✓  What is your name?
+✓  Can you help me?
+
+
+┌───────────────────────────────────────────────┐
+│  7. CONVERSATION PRACTICE                     │
+└───────────────────────────────────────────────┘
+
+
+💬 Dialogue 1: Greeting
+
+A: Hello!
+B: Hello! How are you?
+A: I'm fine, thank you.
+
+
+💬 Dialogue 2: Introduction
+
+A: What's your name?
+B: My name is Riann.
+A: Nice to meet you!
+B: Nice to meet you too!
+
+┌───────────────────────────────────────────────┐
+│  8. TIPS BELAJAR CEPAT 🚀                     │
+└───────────────────────────────────────────────┘
+
+✨  Dengarkan lagu berbahasa Inggris
+
+✨  Tonton video dengan subtitle
+
+✨  Catat 5 kosakata baru setiap hari
+
+✨  Latihan berbicara walaupun salah
+
+✨  Gunakan aplikasi English for Beginners
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+              Keep Learning! 📚✨
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+        vocabulary: [
+          {
+            word: "Alphabet",
+            meaning: "Abjad / Huruf",
+            example: "The English alphabet has 26 letters.",
+          },
+          {
+            word: "Greeting",
+            meaning: "Sapaan / Salam",
+            example: "Good morning is a common greeting.",
+          },
+          {
+            word: "Introduce",
+            meaning: "Memperkenalkan",
+            example: "Let me introduce myself.",
+          },
+          {
+            word: "Pronoun",
+            meaning: "Kata ganti",
+            example: "I, you, he, she are pronouns.",
+          },
+          {
+            word: "Vocabulary",
+            meaning: "Kosakata",
+            example: "Learn new vocabulary every day.",
+          },
+        ],
+        quiz: {
+          question: 'Bagaimana cara melafalkan huruf "G" dalam bahasa Inggris?',
+          options: ["/gi/", "/dʒi/", "/ge/", "/gei/"],
+          correctAnswer: 1,
+        },
+      },
+    },
+    // Intermediate English Mastery - Lesson 1
+    11: {
       title: "Present Perfect Tense",
       duration: "18 menit",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
       transcript: [
         {
           id: 1,
@@ -388,7 +835,8 @@ Perbedaan dengan Simple Past:
     5: {
       title: "Business & Professional Vocabulary",
       duration: "16 menit",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
       transcript: [
         {
           id: 1,
@@ -503,7 +951,8 @@ Contoh Situasi:
     6: {
       title: "Small Talk & Social Situations",
       duration: "16 menit",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+      videoUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
       transcript: [
         {
           id: 1,
@@ -736,13 +1185,9 @@ Project Manager`,
           },
         ],
         quiz: {
-          question: "What is the most professional way to start a business email?",
-          options: [
-            "Hey, what's up?",
-            "Dear Mr. Smith,",
-            "Yo!",
-            "Hi there!",
-          ],
+          question:
+            "What is the most professional way to start a business email?",
+          options: ["Hey, what's up?", "Dear Mr. Smith,", "Yo!", "Hi there!"],
           correctAnswer: 1,
         },
       },
@@ -896,13 +1341,9 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
           },
         ],
         quiz: {
-          question: "How much time should you spend on each TOEFL reading passage?",
-          options: [
-            "10 minutes",
-            "20 minutes",
-            "30 minutes",
-            "40 minutes",
-          ],
+          question:
+            "How much time should you spend on each TOEFL reading passage?",
+          options: ["10 minutes", "20 minutes", "30 minutes", "40 minutes"],
           correctAnswer: 1,
         },
       },
@@ -910,7 +1351,7 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
   };
 
   const lesson = lessonData[lessonId as keyof typeof lessonData];
-  
+
   // Guard clause for lessons without content
   if (!lesson) {
     return (
@@ -919,7 +1360,8 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
           <div className="text-6xl mb-4">📚</div>
           <h2 className="text-2xl font-bold mb-2">Lesson Belum Tersedia</h2>
           <p className="text-gray-600 mb-6">
-            Konten untuk lesson ini sedang dalam pengembangan. Silakan coba lesson lain atau kembali nanti.
+            Konten untuk lesson ini sedang dalam pengembangan. Silakan coba
+            lesson lain atau kembali nanti.
           </p>
           <Button onClick={onBack} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -929,7 +1371,7 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
       </div>
     );
   }
-  
+
   const steps = ["Materi", "Vocabulary", "Quiz"];
   const progressPercent = ((currentStep + 1) / steps.length) * 100;
 
@@ -1006,228 +1448,547 @@ Remember: Practice makes perfect! Take multiple practice tests to improve your s
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {currentStep === 0 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-2xl animate-[bounce_1.5s_ease-out]">{/* Header Section with Gradient */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
-                <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInLeft_1.5s_ease-out]"
-                  style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              {/* Header Section */}
+              <div
+                className="p-6 rounded-2xl mb-8 relative overflow-hidden"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #06b6d4 100%)",
+                }}
+              >
+                <motion.h2
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="text-4xl mb-2 text-white drop-shadow-lg"
+                  style={{
+                    fontFamily: '"Fredoka", "Poppins", sans-serif',
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                  }}
                 >
                   📚 Materi Pembelajaran
-                </h2>
-                <p className="text-sm font-medium animate-[fadeIn_1.2s_ease-out] text-black">
+                </motion.h2>
+                <motion.p
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="text-sm font-medium text-white/90"
+                  style={{ fontFamily: '"Poppins", sans-serif' }}
+                >
                   Pelajari dengan seksama untuk memahami konsep dasar
-                </p>
+                </motion.p>
               </div>
 
-              {/* Content Section */}
-              <div className="p-8">
-                  {/* Text content with rotating text animation */}
-                  <div className="prose max-w-none bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-inner border border-blue-200/50">
-                    <RotatingText
-                      texts={[lesson.content.text]}
-                      rotationInterval={999999}
-                      auto={false}
-                      className="whitespace-pre-line text-gray-800 leading-loose text-lg font-normal"
-                      textClassName="text-gray-800"
-                    />
-                  </div>
+              {/* Magic Bento Cards for Lesson 4 (multi-section) */}
+              {lessonId === 4 ? (
+                <>
+                  <div className="card-grid mb-8">
+                    {parseLessonSections(lesson.content.text).map(
+                      (section, index) => (
+                        <React.Fragment key={`section-wrapper-${index}`}>
+                          <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 * index }}
+                            className={section.fullWidth ? "col-span-full" : ""}
+                          >
+                            <MagicCard
+                              theme={section.theme}
+                              fullWidth={section.fullWidth}
+                            >
+                              <div className="magic-bento-card__header">
+                                <div className="magic-bento-card__label">
+                                  {section.label}
+                                </div>
+                              </div>
+                              <div className="magic-bento-card__content">
+                                <h2 className="magic-bento-card__title">
+                                  {section.title}
+                                </h2>
+                                <p className="magic-bento-card__description">
+                                  {section.content}
+                                </p>
+                              </div>
+                            </MagicCard>
+                          </motion.div>
 
-                  {/* Action Button */}
-                  <div className="mt-8 flex justify-end animate-[slideUp_1s_ease-out]">
-                    <Button
-                      onClick={handleNext}
-                      className="gap-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-black font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg"
-                      style={{ fontFamily: '"Poppins", sans-serif' }}
+                          {/* Insert classroom image card after INTRODUCING YOURSELF section (index 2) */}
+                          {index === 2 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 30 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: 0.35 }}
+                              className="col-span-full"
+                            >
+                              <MagicCard theme="cyan" fullWidth={true}>
+                                <div className="magic-bento-card__header">
+                                  <div className="magic-bento-card__label">
+                                    📸 Classroom
+                                  </div>
+                                </div>
+                                <div className="magic-bento-card__content">
+                                  <h2 className="magic-bento-card__title">
+                                    English Grammar in Action
+                                  </h2>
+                                  <div className="mt-4 rounded-xl overflow-hidden shadow-lg">
+                                    <img
+                                      src={classroomImage}
+                                      alt="English Grammar classroom session"
+                                      className="w-full h-auto object-cover rounded-xl"
+                                      style={{
+                                        maxHeight: "500px",
+                                        objectPosition: "center",
+                                      }}
+                                    />
+                                  </div>
+                                  <p
+                                    className="magic-bento-card__description mt-4"
+                                    style={{ fontSize: "14px", opacity: 0.8 }}
+                                  >
+                                    💡 Belajar bahasa Inggris lebih menyenangkan
+                                    dengan praktik langsung di kelas!
+                                  </p>
+                                </div>
+                              </MagicCard>
+                            </motion.div>
+                          )}
+
+                          {/* Insert study group image card after card 5 (index 4) */}
+                          {index === 4 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 30 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: 0.65 }}
+                              className="col-span-full"
+                            >
+                              <MagicCard theme="green" fullWidth={true}>
+                                <div className="magic-bento-card__header">
+                                  <div className="magic-bento-card__label">
+                                    📚 Study Group
+                                  </div>
+                                </div>
+                                <div className="magic-bento-card__content">
+                                  <h2 className="magic-bento-card__title">
+                                    Collaborative Learning
+                                  </h2>
+                                  <div className="mt-4 rounded-xl overflow-hidden shadow-lg">
+                                    <img
+                                      src={studyGroupImage}
+                                      alt="Study group learning together"
+                                      className="w-full h-auto object-cover rounded-xl"
+                                      style={{
+                                        maxHeight: "500px",
+                                        objectPosition: "center",
+                                      }}
+                                    />
+                                  </div>
+                                  <p
+                                    className="magic-bento-card__description mt-4"
+                                    style={{ fontSize: "14px", opacity: 0.8 }}
+                                  >
+                                    🤝 Belajar bersama teman membuat pemahaman
+                                    semakin mudah!
+                                  </p>
+                                </div>
+                              </MagicCard>
+                            </motion.div>
+                          )}
+                        </React.Fragment>
+                      )
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Regular single card for other lessons */
+                <Card className="p-0 overflow-hidden border-2 border-purple-200 shadow-[0_0_30px_rgba(147,51,234,0.15)] bg-white mb-8">
+                  <div
+                    className="p-8"
+                    style={{
+                      background:
+                        "linear-gradient(to bottom, #faf5ff, #ffffff)",
+                    }}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                      className="prose max-w-none bg-white p-6 rounded-2xl border-2 border-purple-100 shadow-inner"
                     >
-                      Lanjut ke Vocabulary
-                      <ChevronRight className="h-5 w-5 animate-[bounce_1s_ease-in-out_infinite]" />
-                    </Button>
+                      <pre
+                        className="whitespace-pre-wrap leading-relaxed text-base"
+                        style={{
+                          fontFamily:
+                            '"Poppins", "Segoe UI", system-ui, sans-serif',
+                          lineHeight: "1.9",
+                          color: "#581c87",
+                        }}
+                      >
+                        {lesson.content.text}
+                      </pre>
+                    </motion.div>
                   </div>
-              </div>
-            </Card>
+                </Card>
+              )}
+
+              {/* Action Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="flex justify-end"
+              >
+                <Button
+                  onClick={handleNext}
+                  className="gap-2 text-white font-bold shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_30px_rgba(147,51,234,0.6)] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg border-0"
+                  style={{
+                    background:
+                      "linear-gradient(to right, #9333ea, #ec4899, #06b6d4)",
+                    fontFamily: '"Fredoka", sans-serif',
+                  }}
+                >
+                  Lanjut ke Vocabulary
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </motion.div>
+            </motion.div>
           )}
 
           {currentStep === 1 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 shadow-2xl animate-[bounce_1.5s_ease-out]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
               {/* Header Section */}
-              <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 p-6">
-                <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInRight_1.5s_ease-out]"
-                  style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
+              <div
+                className="p-6 rounded-2xl mb-8 relative overflow-hidden"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fbbf24 100%)",
+                }}
+              >
+                <motion.h2
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="text-4xl mb-2 text-white drop-shadow-lg"
+                  style={{
+                    fontFamily: '"Righteous", "Poppins", sans-serif',
+                    letterSpacing: "2px",
+                  }}
                 >
-                  📖 Vocabulary
-                </h2>
-                <p className="text-sm font-medium animate-[fadeIn_1.2s_ease-out] text-black">
+                  📖 VOCABULARY
+                </motion.h2>
+                <motion.p
+                  initial={{ x: 30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="text-sm font-medium text-white/90"
+                  style={{ fontFamily: '"Poppins", sans-serif' }}
+                >
                   Pelajari kosakata penting dan contoh penggunaannya
-                </p>
+                </motion.p>
               </div>
 
-              {/* Vocabulary Cards */}
-              <div className="p-8 space-y-4">
-                {lesson.content.vocabulary.map((item, index) => (
-                  <Card
-                    key={index}
-                    className="p-6 bg-white/80 backdrop-blur-sm border-2 border-orange-200 hover:border-orange-400 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 animate-[fadeInUp_0.5s_ease-out]"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3
-                        className="text-2xl font-bold text-orange-700"
-                        style={{ fontFamily: '"Poppins", sans-serif' }}
+              {/* Vocabulary Cards with MagicCard */}
+              <div className="card-grid mb-8">
+                {lesson.content.vocabulary.map((item, index) => {
+                  const vocabThemes: CardTheme[] = [
+                    "orange",
+                    "yellow",
+                    "pink",
+                    "red",
+                    "cyan",
+                    "green",
+                    "blue",
+                    "purple",
+                  ];
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.1 * index }}
+                    >
+                      <MagicCard
+                        theme={vocabThemes[index % vocabThemes.length]}
                       >
-                        {item.word}
-                      </h3>
-                      <span className="text-lg font-semibold text-amber-600 bg-amber-100 px-4 py-1 rounded-full border border-amber-300">
-                        {item.meaning}
-                      </span>
-                    </div>
-                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border-l-4 border-orange-500">
-                      <p
-                        className="text-sm font-medium text-gray-800 italic"
-                        style={{ fontFamily: '"Georgia", serif' }}
-                      >
-                        💬 Example: "{item.example}"
-                      </p>
-                    </div>
-                  </Card>
-                ))}
+                        <div className="magic-bento-card__header">
+                          <div className="magic-bento-card__label">
+                            📝 Word {index + 1}
+                          </div>
+                        </div>
+                        <div className="magic-bento-card__content">
+                          <h2
+                            className="magic-bento-card__title"
+                            style={{ fontSize: "1.75rem" }}
+                          >
+                            {item.word}
+                          </h2>
+                          <div
+                            className="inline-block px-4 py-2 rounded-full mb-4"
+                            style={{
+                              background: "rgba(255,255,255,0.15)",
+                              border: "1px solid rgba(255,255,255,0.3)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: '"Poppins", sans-serif',
+                                fontWeight: 600,
+                                color: "#fff",
+                              }}
+                            >
+                              {item.meaning}
+                            </span>
+                          </div>
+                          <div
+                            className="p-4 rounded-lg mt-2"
+                            style={{
+                              background: "rgba(0,0,0,0.2)",
+                              borderLeft: "3px solid rgba(255,255,255,0.5)",
+                            }}
+                          >
+                            <p
+                              className="text-sm italic"
+                              style={{
+                                fontFamily: '"Georgia", serif',
+                                color: "rgba(255,255,255,0.9)",
+                              }}
+                            >
+                              💬 "{item.example}"
+                            </p>
+                          </div>
+                        </div>
+                      </MagicCard>
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* Action Button */}
-              <div className="px-8 pb-8 flex justify-end animate-[slideUp_1s_ease-out]">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="flex justify-end"
+              >
                 <Button
                   onClick={handleNext}
-                  className="gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:from-orange-600 hover:via-amber-600 hover:to-yellow-600 text-black font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg"
-                  style={{ fontFamily: '"Poppins", sans-serif' }}
+                  className="gap-2 text-white font-bold shadow-[0_0_20px_rgba(251,146,60,0.4)] hover:shadow-[0_0_30px_rgba(251,146,60,0.6)] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg border-0"
+                  style={{
+                    background:
+                      "linear-gradient(to right, #ea580c, #f97316, #fbbf24)",
+                    fontFamily: '"Righteous", sans-serif',
+                    letterSpacing: "1px",
+                  }}
                 >
                   Lanjut ke Quiz
-                  <ChevronRight className="h-5 w-5 animate-[bounce_1s_ease-in-out_infinite]" />
+                  <ChevronRight className="h-5 w-5" />
                 </Button>
-              </div>
-            </Card>
+              </motion.div>
+            </motion.div>
           )}
 
           {currentStep === 2 && (
-            <Card className="p-0 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-2xl animate-[bounce_1.5s_ease-out]">
-              {/* Header Section */}
-              <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 p-6">
-                <h2
-                  className="text-3xl font-black mb-2 text-white drop-shadow-lg animate-[slideInLeft_1.5s_ease-out]"
-                  style={{ fontFamily: '"Poppins", "Inter", sans-serif' }}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <Card className="p-0 overflow-hidden border-2 border-green-200 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-white">
+                {/* Header Section */}
+                <div
+                  className="p-6 relative overflow-hidden"
+                  style={{
+                    background:
+                      "linear-gradient(to right, #16a34a, #22c55e, #06b6d4)",
+                  }}
                 >
-                  🎯 Quiz Time!
-                </h2>
-                <p className="text-sm font-medium animate-[fadeIn_1.2s_ease-out] text-black">
-                  Uji pemahaman Anda dengan quiz interaktif
-                </p>
-              </div>
-
-              {/* Quiz Content */}
-              <div className="p-8">
-                <div className="mb-8 bg-white/80 backdrop-blur-sm p-6 rounded-xl border-2 border-green-200 shadow-lg animate-[fadeInUp_0.6s_ease-out]">
-                  <p
-                    className="text-xl font-semibold text-gray-800 leading-relaxed"
+                  <motion.h2
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="text-4xl mb-2 text-white drop-shadow-lg"
+                    style={{
+                      fontFamily: '"Bangers", "Poppins", sans-serif',
+                      letterSpacing: "3px",
+                    }}
+                  >
+                    🎯 QUIZ TIME!
+                  </motion.h2>
+                  <motion.p
+                    initial={{ x: -30, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    className="text-sm font-medium text-white/90"
                     style={{ fontFamily: '"Poppins", sans-serif' }}
                   >
-                    {lesson.content.quiz.question}
-                  </p>
+                    Uji pemahaman Anda dengan quiz interaktif
+                  </motion.p>
                 </div>
 
-                <div className="space-y-4">
-                  {lesson.content.quiz.options.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleQuizAnswer(index)}
-                      disabled={showResult}
-                      className={`w-full p-5 text-left rounded-xl border-3 transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 shadow-md hover:shadow-xl animate-[fadeInUp_0.5s_ease-out] ${
-                        !showResult
-                          ? "border-2 border-gray-300 bg-white/80 hover:border-green-500 hover:bg-green-50"
-                          : index === lesson.content.quiz.correctAnswer
-                          ? "border-3 border-green-500 bg-gradient-to-r from-green-100 to-emerald-100 shadow-green-200"
-                          : index === selectedAnswer
-                          ? "border-3 border-red-500 bg-gradient-to-r from-red-100 to-rose-100 shadow-red-200"
-                          : "border-2 border-gray-200 bg-gray-50 opacity-50"
-                      }`}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-8 h-8 rounded-full border-3 flex items-center justify-center font-bold transition-all ${
-                            !showResult
-                              ? "border-gray-400 bg-white text-gray-600"
-                              : index === lesson.content.quiz.correctAnswer
-                              ? "border-green-600 bg-green-500 text-white shadow-lg"
-                              : index === selectedAnswer
-                              ? "border-red-600 bg-red-500 text-white shadow-lg"
-                              : "border-gray-300 bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          {!showResult && String.fromCharCode(65 + index)}
-                          {showResult &&
-                            index === lesson.content.quiz.correctAnswer && (
-                              <CheckCircle2 className="h-5 w-5 text-white" />
-                            )}
-                          {showResult &&
-                            index === selectedAnswer &&
-                            index !== lesson.content.quiz.correctAnswer && (
-                              <span className="text-white font-bold">✕</span>
-                            )}
-                        </div>
-                        <span
-                          className="text-lg font-medium text-gray-800"
-                          style={{ fontFamily: '"Inter", sans-serif' }}
-                        >
-                          {option}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {showResult && (
-                <div className="px-8 pb-6">
-                  <div
-                    className={`p-6 rounded-xl mb-6 shadow-xl border-2 animate-[bounceIn_0.5s_ease-out] ${
-                      selectedAnswer === lesson.content.quiz.correctAnswer
-                        ? "bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 border-green-400"
-                        : "bg-gradient-to-r from-red-100 via-rose-100 to-pink-100 border-red-400"
-                    }`}
+                {/* Quiz Content */}
+                <div
+                  className="p-8"
+                  style={{
+                    background: "linear-gradient(to bottom, #f0fdf4, #ffffff)",
+                  }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mb-8 bg-white p-6 rounded-xl border-2 border-green-200 shadow-inner"
                   >
                     <p
-                      className={`text-lg font-bold ${
-                        selectedAnswer === lesson.content.quiz.correctAnswer
-                          ? "text-green-800"
-                          : "text-red-800"
-                      }`}
-                      style={{ fontFamily: '"Poppins", sans-serif' }}
+                      className="text-xl leading-relaxed"
+                      style={{
+                        fontFamily: '"Poppins", sans-serif',
+                        fontWeight: 600,
+                        color: "#166534",
+                      }}
                     >
-                      {selectedAnswer === lesson.content.quiz.correctAnswer
-                        ? "🎉 Sempurna! Jawaban Anda benar!"
-                        : "❌ Kurang tepat. Jawaban yang benar adalah: " +
-                          lesson.content.quiz.options[
-                            lesson.content.quiz.correctAnswer
-                          ]}
+                      {lesson.content.quiz.question}
                     </p>
+                  </motion.div>
+
+                  <div className="space-y-4">
+                    {lesson.content.quiz.options.map((option, index) => (
+                      <motion.button
+                        key={index}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                        onClick={() => handleQuizAnswer(index)}
+                        disabled={showResult}
+                        className={`w-full p-5 text-left rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 ${
+                          !showResult
+                            ? "border-2 border-green-200 bg-white hover:border-green-400 hover:shadow-[0_0_15px_rgba(34,197,94,0.25)]"
+                            : index === lesson.content.quiz.correctAnswer
+                            ? "border-2 border-green-500 bg-green-50 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                            : index === selectedAnswer
+                            ? "border-2 border-red-500 bg-red-50 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                            : "border-2 border-gray-200 bg-gray-50 opacity-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                              !showResult
+                                ? "border-2 border-green-300 bg-green-50"
+                                : index === lesson.content.quiz.correctAnswer
+                                ? "border-2 border-green-500 bg-green-500"
+                                : index === selectedAnswer
+                                ? "border-2 border-red-500 bg-red-500"
+                                : "border-2 border-gray-300 bg-gray-100"
+                            }`}
+                            style={{
+                              fontFamily: '"Fredoka", sans-serif',
+                              fontWeight: 600,
+                              color: !showResult
+                                ? "#16a34a"
+                                : index === lesson.content.quiz.correctAnswer ||
+                                  index === selectedAnswer
+                                ? "#fff"
+                                : "#9ca3af",
+                            }}
+                          >
+                            {!showResult && String.fromCharCode(65 + index)}
+                            {showResult &&
+                              index === lesson.content.quiz.correctAnswer && (
+                                <CheckCircle2 className="h-5 w-5 text-white" />
+                              )}
+                            {showResult &&
+                              index === selectedAnswer &&
+                              index !== lesson.content.quiz.correctAnswer && (
+                                <span className="text-white font-bold">✕</span>
+                              )}
+                          </div>
+                          <span
+                            className="text-lg"
+                            style={{
+                              fontFamily: '"Poppins", sans-serif',
+                              fontWeight: 500,
+                              color: "#166534",
+                            }}
+                          >
+                            {option}
+                          </span>
+                        </div>
+                      </motion.button>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              {showResult && (
-                <div className="px-8 pb-8 flex justify-end animate-[slideUp_1s_ease-out]">
-                  <Button
-                    onClick={handleNext}
-                    className="gap-2 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-black font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg"
-                    style={{ fontFamily: '"Poppins", sans-serif' }}
+                {showResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="px-8 pb-6"
                   >
-                    Selesaikan Lesson
-                    <CheckCircle2 className="h-5 w-5 animate-[bounce_1s_ease-in-out_infinite]" />
-                  </Button>
-                </div>
-              )}
-            </Card>
+                    <div
+                      className={`p-6 rounded-xl mb-6 border-2 ${
+                        selectedAnswer === lesson.content.quiz.correctAnswer
+                          ? "bg-green-50 border-green-400"
+                          : "bg-red-50 border-red-400"
+                      }`}
+                    >
+                      <p
+                        className="text-lg"
+                        style={{
+                          fontFamily: '"Fredoka", sans-serif',
+                          fontWeight: 600,
+                          color:
+                            selectedAnswer === lesson.content.quiz.correctAnswer
+                              ? "#166534"
+                              : "#dc2626",
+                        }}
+                      >
+                        {selectedAnswer === lesson.content.quiz.correctAnswer
+                          ? "🎉 Sempurna! Jawaban Anda benar!"
+                          : "❌ Kurang tepat. Jawaban yang benar adalah: " +
+                            lesson.content.quiz.options[
+                              lesson.content.quiz.correctAnswer
+                            ]}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {showResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="px-8 pb-8 flex justify-end bg-white"
+                  >
+                    <Button
+                      onClick={handleNext}
+                      className="gap-2 text-white font-bold shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 px-8 py-6 text-lg border-0"
+                      style={{
+                        background:
+                          "linear-gradient(to right, #16a34a, #22c55e, #06b6d4)",
+                        fontFamily: '"Bangers", sans-serif',
+                        letterSpacing: "2px",
+                      }}
+                    >
+                      SELESAIKAN LESSON
+                      <CheckCircle2 className="h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                )}
+              </Card>
+            </motion.div>
           )}
         </div>
       </div>

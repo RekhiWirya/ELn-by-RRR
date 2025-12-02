@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, RotateCcw, Heart } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import Shuffle from "../ui/Shuffle";
 
 interface HangmanGameProps {

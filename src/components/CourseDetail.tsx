@@ -149,13 +149,13 @@ export function CourseDetail({
           title: "Grammar Essentials (Intermediate)",
           lessons: [
             {
-              id: 4,
+              id: 11,
               title: "Present Perfect Tense",
               duration: "18 menit",
               completed: false,
             },
             {
-              id: 11,
+              id: 48,
               title: "Past Perfect & Future Perfect",
               duration: "20 menit",
               completed: false,

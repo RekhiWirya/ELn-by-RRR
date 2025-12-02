@@ -92,7 +92,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-primary hover:scale-105 transition-all duration-300"
+                  className="border-orange-400 text-orange-400 bg-transparent hover:bg-orange-400 hover:text-white hover:scale-105 transition-all duration-300"
                 >
                   Lihat Demo
                 </Button>

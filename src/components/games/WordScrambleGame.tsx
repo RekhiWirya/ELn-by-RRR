@@ -3,7 +3,7 @@ import { ArrowLeft, RotateCcw, Lightbulb, Trophy } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { Progress } from "../ui/progress";
 import Shuffle from "../ui/Shuffle";
 

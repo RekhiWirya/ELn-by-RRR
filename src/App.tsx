@@ -12,7 +12,7 @@ import { HangmanGame } from "./components/games/HangmanGame";
 import { CrosswordGame } from "./components/games/CrosswordGame";
 import { ComprehensibleInputPage } from "./components/ComprehensibleInputPage";
 import { Toaster } from "./components/ui/sonner";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import ClickSpark from "./components/ui/click-spark";
 
 type Page =
@@ -80,9 +80,7 @@ export default function App() {
       sparkCount={10}
     >
       <div
-        className={`min-h-screen ${
-          currentPage.startsWith("game-") ? "" : ""
-        }`}
+        className={`min-h-screen ${currentPage.startsWith("game-") ? "" : ""}`}
       >
         {currentPage !== "lesson" && !currentPage.startsWith("game-") && (
           <Header onNavigate={handleNavigate} currentPage={currentPage} />

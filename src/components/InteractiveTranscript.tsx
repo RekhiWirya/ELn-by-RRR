@@ -30,7 +30,7 @@ export function InteractiveTranscript({
     const active = segments.find(
       (seg) => currentTime >= seg.startTime && currentTime <= seg.endTime
     );
-    
+
     if (active && activeSegmentId !== active.id) {
       setActiveSegmentId(active.id);
       // Auto-scroll to active segment only if it's not visible
@@ -38,7 +38,7 @@ export function InteractiveTranscript({
       if (element) {
         const rect = element.getBoundingClientRect();
         const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
-        
+
         if (!isVisible) {
           element.scrollIntoView({
             behavior: "smooth",
@@ -59,7 +59,9 @@ export function InteractiveTranscript({
     <Card className="p-6 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 border-2 border-purple-200">
       <div className="flex items-center gap-3 mb-4">
         <Volume2 className="h-6 w-6 text-purple-600" />
-        <h3 className="text-xl font-bold text-gray-800">Interactive Transcript</h3>
+        <h3 className="text-xl font-bold text-gray-800">
+          Interactive Transcript
+        </h3>
         <Badge className="bg-purple-100 text-purple-700 border-purple-300">
           Klik untuk melompat ke bagian tersebut
         </Badge>
@@ -68,7 +70,7 @@ export function InteractiveTranscript({
       <div className="max-h-96 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-50">
         {segments.map((segment) => {
           const isActive = activeSegmentId === segment.id;
-          
+
           return (
             <div
               key={segment.id}
@@ -102,9 +104,7 @@ export function InteractiveTranscript({
                   )}
                   <p
                     className={`text-sm leading-relaxed ${
-                      isActive
-                        ? "text-white font-semibold"
-                        : "text-gray-700"
+                      isActive ? "text-white font-semibold" : "text-gray-700"
                     }`}
                   >
                     {segment.text}
