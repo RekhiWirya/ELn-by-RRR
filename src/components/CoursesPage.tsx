@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Clock, Users, Star, BookOpen, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Clock, Users, Star, BookOpen, Search, Filter, Loader2 } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { getCourses, Course as APICourse } from "../services/api";
 
 export interface Course {
   id: number;
@@ -27,65 +28,40 @@ export function CoursesPage({ onSelectCourse }: CoursesPageProps) {
   const [selectedLevel, setSelectedLevel] = useState<string>("All");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const courses: Course[] = [
-    {
-      id: 1,
-      title: "English for Beginners",
-      description:
-        "Mulai perjalanan bahasa Inggris Anda dari dasar. Pelajari vocabulary, grammar, dan conversation dasar.",
-      level: "Beginner",
-      duration: "8 minggu",
-      students: 2450,
-      rating: 4.8,
-      lessons: 32,
-      category: "General",
-      image:
-        "https://images.unsplash.com/photo-1543109740-4bdb38fda756?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdsaXNoJTIwbGVhcm5pbmclMjBlZHVjYXRpb258ZW58MXx8fHwxNzYyMzA0NTYxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    },
-    {
-      id: 2,
-      title: "Intermediate English Mastery",
-      description:
-        "Tingkatkan kemampuan berbahasa Inggris Anda ke level menengah dengan fokus pada speaking dan writing.",
-      level: "Intermediate",
-      duration: "10 minggu",
-      students: 1820,
-      rating: 4.9,
-      lessons: 40,
-      category: "Conversation",
-      image:
-        "https://images.unsplash.com/photo-1596247290824-e9f12b8c574f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwc3R1ZHlpbmclMjBvbmxpbmV8ZW58MXx8fHwxNzYyMjU0NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    },
-    {
-      id: 3,
-      title: "Business English Professional",
-      description:
-        "Kuasai bahasa Inggris untuk dunia kerja. Email, presentation, meeting, dan negotiation skills.",
-      level: "Advanced",
-      duration: "12 minggu",
-      students: 1560,
-      rating: 4.9,
-      lessons: 45,
-      category: "Business",
-      image:
-        "https://images.unsplash.com/photo-1558443957-d056622df610?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYW5ndWFnZSUyMGNsYXNzcm9vbXxlbnwxfHx8fDE3NjIyOTcyODl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    },
-    {
-      id: 4,
-      title: "TOEFL Preparation Course",
-      description:
-        "Persiapan lengkap untuk tes TOEFL dengan strategi, tips, dan latihan soal komprehensif.",
-      level: "Intermediate",
-      duration: "8 minggu",
-      students: 980,
-      rating: 4.7,
-      lessons: 36,
-      category: "Test Prep",
-      image:
-        "https://images.unsplash.com/photo-1566314748815-2ff5db8edf2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxib29rcyUyMGVkdWNhdGlvbnxlbnwxfHx8fDE3NjIxOTEzOTd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    },
-  ];
+  // Fetch courses from API
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getCourses();
+        // Map API response to Course interface
+        const mappedCourses: Course[] = data.map((course: APICourse) => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          level: course.level,
+          duration: course.duration,
+          students: course.students || 0,
+          rating: course.rating || 4.5,
+          lessons: course.lessons || 0,
+          image: course.image || "https://images.unsplash.com/photo-1543109740-4bdb38fda756?w=1080",
+          category: course.category || "General",
+        }));
+        setCourses(mappedCourses);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat kursus");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   // Filter logic
   const filteredCourses = courses.filter((course) => {
@@ -122,6 +98,32 @@ export function CoursesPage({ onSelectCourse }: CoursesPageProps) {
         return "bg-gray-100 text-gray-700";
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="py-12 bg-gradient-to-br from-orange-50 via-purple-50 to-blue-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-xl text-gray-600">Memuat kursus...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="py-12 bg-gradient-to-br from-orange-50 via-purple-50 to-blue-50 min-h-screen flex items-center justify-center">
+        <Card className="p-8 text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h3 className="text-2xl font-bold mb-2 text-red-600">Gagal Memuat Kursus</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()}>Coba Lagi</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="py-12 bg-gradient-to-br from-orange-50 via-purple-50 to-blue-50 min-h-screen animate-gradient">
@@ -161,11 +163,10 @@ export function CoursesPage({ onSelectCourse }: CoursesPageProps) {
                   key={level}
                   variant={selectedLevel === level ? "default" : "outline"}
                   onClick={() => setSelectedLevel(level)}
-                  className={`transition-all duration-300 hover-shine ${
-                    selectedLevel === level
-                      ? "scale-110 shadow-2xl animate-pulse-glow"
-                      : "hover:scale-110 hover:shadow-xl"
-                  }`}
+                  className={`transition-all duration-300 hover-shine ${selectedLevel === level
+                    ? "scale-110 shadow-2xl animate-pulse-glow"
+                    : "hover:scale-110 hover:shadow-xl"
+                    }`}
                 >
                   {level}
                   {level !== "All" && selectedLevel === level && (
@@ -191,11 +192,10 @@ export function CoursesPage({ onSelectCourse }: CoursesPageProps) {
                     selectedCategory === category ? "default" : "outline"
                   }
                   onClick={() => setSelectedCategory(category)}
-                  className={`transition-all duration-300 hover-shine ${
-                    selectedCategory === category
-                      ? "scale-110 shadow-2xl animate-pulse-glow"
-                      : "hover:scale-110 hover:shadow-xl"
-                  }`}
+                  className={`transition-all duration-300 hover-shine ${selectedCategory === category
+                    ? "scale-110 shadow-2xl animate-pulse-glow"
+                    : "hover:scale-110 hover:shadow-xl"
+                    }`}
                 >
                   {category}
                   {category !== "All" && selectedCategory === category && (

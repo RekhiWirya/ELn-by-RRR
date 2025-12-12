@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { login as apiLogin, register as apiRegister } from "../services/api";
 
 interface LoginPageProps {
   onLogin: (user: { name: string; email: string }) => void;
@@ -42,14 +43,34 @@ export function LoginPage({ onLogin, onSkip }: LoginPageProps) {
     if (Object.keys(nextErrors).length > 0) return;
 
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 900));
 
-    setIsLoading(false);
-    onLogin({
-      name: formData.email.split("@")[0],
-      email: formData.email,
-    });
+    try {
+      if (isRegisterMode) {
+        // Register API call
+        const response = await apiRegister(
+          formData.email.split("@")[0], // Use email prefix as name
+          formData.email,
+          formData.password
+        );
+        onLogin({
+          name: response.user.name,
+          email: response.user.email,
+        });
+      } else {
+        // Login API call
+        const response = await apiLogin(formData.email, formData.password);
+        onLogin({
+          name: response.user.name,
+          email: response.user.email,
+        });
+      }
+    } catch (error) {
+      // Handle API error
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan";
+      setErrors({ email: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
