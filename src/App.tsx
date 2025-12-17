@@ -16,9 +16,11 @@ import { RegisterPage } from "./components/RegisterPage";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import ClickSpark from "./components/ui/click-spark";
+import { PageProfil } from "./components/PageProfil";
 
 type Page =
   | "home"
+  | "profile"
   | "login"
   | "register"
   | "courses"
@@ -36,7 +38,13 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("login");
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    avatar?: string;
+  } | null>(null);
 
   const handleNavigate = (page: string, courseId?: number) => {
     setCurrentPage(page as Page);
@@ -90,9 +98,7 @@ export default function App() {
       sparkCount={10}
     >
       <div
-        className={`min-h-screen ${
-          currentPage.startsWith("game-") ? "" : ""
-        }`}
+        className={`min-h-screen ${currentPage.startsWith("game-") ? "" : ""}`}
       >
         {currentPage !== "lesson" &&
           !currentPage.startsWith("game-") &&
@@ -102,10 +108,10 @@ export default function App() {
           )}
 
         {currentPage === "home" && <HomePage onNavigate={handleNavigate} />}
-        {currentPage === "login" && (
-          <LoginPage onLogin={handleLogin} />
+        {currentPage === "login" && <LoginPage onLogin={handleLogin} />}
+        {currentPage === "register" && (
+          <RegisterPage onNavigate={handleNavigate} />
         )}
-        {currentPage === "register" && <RegisterPage onNavigate={handleNavigate} />}
 
         {currentPage === "courses" && (
           <CoursesPage onSelectCourse={handleSelectCourse} />
@@ -129,6 +135,13 @@ export default function App() {
 
         {currentPage === "my-learning" && (
           <MyLearning onNavigate={handleNavigate} />
+        )}
+
+        {currentPage === "profile" && (
+          <PageProfil
+            user={user}
+            onUpdateUser={(u) => setUser((prev) => ({ ...(prev ?? {}), ...u }))}
+          />
         )}
 
         {currentPage === "comprehensible-input" && (
