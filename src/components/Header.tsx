@@ -9,7 +9,14 @@ interface HeaderProps {
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
   return (
-    <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+    <header
+      className="border-b border-orange-200/30 sticky top-0 z-50 shadow-lg"
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.4)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }}
+    >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div 
           className="flex items-center gap-3 cursor-pointer" 
@@ -20,9 +27,11 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
 
         <nav className="hidden md:flex items-center gap-6">
           <button
-            onClick={() => onNavigate('home')}
-            className={`hover:text-primary transition-colors ${
-              currentPage === 'home' ? 'text-primary' : ''
+            onClick={() => onNavigate("home")}
+            className={`hover:text-primary transition-all duration-300 font-medium px-3 py-2 rounded-lg hover:bg-orange-50 hover:scale-110 hover-shine ${
+              currentPage === "home"
+                ? "text-primary bg-orange-50 scale-105"
+                : ""
             }`}
           >
             Beranda
@@ -45,9 +54,11 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
             Mini Games
           </button>
           <button
-            onClick={() => onNavigate('my-learning')}
-            className={`hover:text-primary transition-colors ${
-              currentPage === 'my-learning' ? 'text-primary' : ''
+            onClick={() => onNavigate("my-learning")}
+            className={`hover:text-primary transition-all duration-300 font-medium px-3 py-2 rounded-lg hover:bg-orange-50 hover:scale-110 hover-shine ${
+              currentPage === "my-learning"
+                ? "text-primary bg-orange-50 scale-105"
+                : ""
             }`}
           >
             Pembelajaran Saya
@@ -55,7 +66,12 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onNavigate("profile")}
+            className="hover:bg-orange-50 hover:text-primary transition-all duration-300 hover:scale-125 hover:rotate-12"
+          >
             <User className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="md:hidden">
