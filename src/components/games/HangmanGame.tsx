@@ -1,35 +1,30 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, RotateCcw, Heart } from "lucide-react";
-import { Button } from "../ui/button";
-import { Card } from "../ui/card";
-import { toast } from "sonner@2.0.3";
-import Shuffle from "../ui/Shuffle";
+import { useState, useEffect } from 'react';
+import { ArrowLeft, RotateCcw, Heart } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { toast } from 'sonner@2.0.3';
 
 interface HangmanGameProps {
   onBack: () => void;
 }
 
 const WORDS = [
-  { word: "BEAUTIFUL", hint: "Attractive or pleasing", category: "Adjective" },
-  { word: "CHOCOLATE", hint: "Sweet brown food", category: "Food" },
-  { word: "ADVENTURE", hint: "Exciting experience", category: "Noun" },
-  { word: "TELEPHONE", hint: "Device for calling", category: "Object" },
-  { word: "BUTTERFLY", hint: "Insect with colorful wings", category: "Animal" },
-  { word: "EDUCATION", hint: "Process of learning", category: "Concept" },
-  { word: "HAPPINESS", hint: "Feeling of joy", category: "Emotion" },
-  { word: "IMPORTANT", hint: "Very significant", category: "Adjective" },
-  { word: "WONDERFUL", hint: "Extremely good", category: "Adjective" },
-  { word: "KNOWLEDGE", hint: "What you know", category: "Concept" },
+  { word: 'BEAUTIFUL', hint: 'Attractive or pleasing', category: 'Adjective' },
+  { word: 'CHOCOLATE', hint: 'Sweet brown food', category: 'Food' },
+  { word: 'ADVENTURE', hint: 'Exciting experience', category: 'Noun' },
+  { word: 'TELEPHONE', hint: 'Device for calling', category: 'Object' },
+  { word: 'BUTTERFLY', hint: 'Insect with colorful wings', category: 'Animal' },
+  { word: 'EDUCATION', hint: 'Process of learning', category: 'Concept' },
+  { word: 'HAPPINESS', hint: 'Feeling of joy', category: 'Emotion' },
+  { word: 'IMPORTANT', hint: 'Very significant', category: 'Adjective' },
+  { word: 'WONDERFUL', hint: 'Extremely good', category: 'Adjective' },
+  { word: 'KNOWLEDGE', hint: 'What you know', category: 'Concept' },
 ];
 
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 export function HangmanGame({ onBack }: HangmanGameProps) {
-  const [currentWord, setCurrentWord] = useState({
-    word: "",
-    hint: "",
-    category: "",
-  });
+  const [currentWord, setCurrentWord] = useState({ word: '', hint: '', category: '' });
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -43,31 +38,17 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
   }, []);
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (gameOver) return;
-
-      const key = e.key.toUpperCase();
-      if (ALPHABET.includes(key)) {
-        handleGuess(key);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [gameOver, guessedLetters, currentWord]);
-
-  useEffect(() => {
     if (gameOver) return;
 
-    const wordLetters = currentWord.word.split("").filter((l) => l !== " ");
+    const wordLetters = currentWord.word.split('').filter(l => l !== ' ');
     const uniqueLetters = new Set(wordLetters);
-    const correctGuesses = guessedLetters.filter((l) => uniqueLetters.has(l));
+    const correctGuesses = guessedLetters.filter(l => uniqueLetters.has(l));
 
     if (correctGuesses.length === uniqueLetters.size && currentWord.word) {
       setWon(true);
       setGameOver(true);
       setScore(score + 1);
-      toast.success("🎉 Selamat! Kamu berhasil menebak kata!");
+      toast.success('🎉 Selamat! Kamu berhasil menebak kata!');
     }
   }, [guessedLetters, currentWord]);
 
@@ -97,17 +78,16 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
   };
 
   const renderWord = () => {
-    return currentWord.word.split("").map((letter, i) => {
-      if (letter === " ") {
+    return currentWord.word.split('').map((letter, i) => {
+      if (letter === ' ') {
         return <span key={i} className="mx-2" />;
       }
       return (
         <span
           key={i}
-          className="inline-block w-12 h-16 border-b-4 border-blue-600 mx-1 text-3xl text-center flex items-center justify-center font-black text-blue-700 animate-bounce-in"
-          style={{ animationDelay: `${i * 100}ms` }}
+          className="inline-block w-12 h-16 border-b-4 border-blue-600 mx-1 text-3xl text-center flex items-center justify-center"
         >
-          {guessedLetters.includes(letter) ? letter : ""}
+          {guessedLetters.includes(letter) ? letter : ''}
         </span>
       );
     });
@@ -116,115 +96,27 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
   const renderHangman = () => {
     const parts = [
       // Head
-      <circle
-        key="head"
-        cx="140"
-        cy="60"
-        r="20"
-        stroke="currentColor"
-        strokeWidth="4"
-        fill="none"
-        className="animate-bounce-in"
-      />,
+      <circle key="head" cx="140" cy="60" r="20" stroke="currentColor" strokeWidth="3" fill="none" />,
       // Body
-      <line
-        key="body"
-        x1="140"
-        y1="80"
-        x2="140"
-        y2="130"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="animate-bounce-in"
-      />,
+      <line key="body" x1="140" y1="80" x2="140" y2="130" stroke="currentColor" strokeWidth="3" />,
       // Left arm
-      <line
-        key="leftarm"
-        x1="140"
-        y1="95"
-        x2="110"
-        y2="110"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="animate-bounce-in"
-      />,
+      <line key="leftarm" x1="140" y1="95" x2="110" y2="110" stroke="currentColor" strokeWidth="3" />,
       // Right arm
-      <line
-        key="rightarm"
-        x1="140"
-        y1="95"
-        x2="170"
-        y2="110"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="animate-bounce-in"
-      />,
+      <line key="rightarm" x1="140" y1="95" x2="170" y2="110" stroke="currentColor" strokeWidth="3" />,
       // Left leg
-      <line
-        key="leftleg"
-        x1="140"
-        y1="130"
-        x2="115"
-        y2="160"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="animate-bounce-in"
-      />,
+      <line key="leftleg" x1="140" y1="130" x2="115" y2="160" stroke="currentColor" strokeWidth="3" />,
       // Right leg
-      <line
-        key="rightleg"
-        x1="140"
-        y1="130"
-        x2="165"
-        y2="160"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="animate-bounce-in"
-      />,
+      <line key="rightleg" x1="140" y1="130" x2="165" y2="160" stroke="currentColor" strokeWidth="3" />,
     ];
 
     return (
-      <svg
-        width="200"
-        height="200"
-        className={`mx-auto mb-6 transition-all duration-300 ${
-          wrongGuesses >= 4 ? "text-red-600 animate-pulse" : "text-gray-700"
-        }`}
-      >
+      <svg width="200" height="200" className="mx-auto mb-6 text-red-600">
         {/* Gallows */}
-        <line
-          x1="20"
-          y1="180"
-          x2="180"
-          y2="180"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <line
-          x1="50"
-          y1="180"
-          x2="50"
-          y2="20"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <line
-          x1="50"
-          y1="20"
-          x2="140"
-          y2="20"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <line
-          x1="140"
-          y1="20"
-          x2="140"
-          y2="40"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-
+        <line x1="20" y1="180" x2="180" y2="180" stroke="currentColor" strokeWidth="3" />
+        <line x1="50" y1="180" x2="50" y2="20" stroke="currentColor" strokeWidth="3" />
+        <line x1="50" y1="20" x2="140" y2="20" stroke="currentColor" strokeWidth="3" />
+        <line x1="140" y1="20" x2="140" y2="40" stroke="currentColor" strokeWidth="3" />
+        
         {/* Body parts */}
         {parts.slice(0, wrongGuesses)}
       </svg>
@@ -232,116 +124,56 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-amber-100 to-yellow-100 py-4 sm:py-8 relative overflow-hidden">
-      {/* Animated Background Shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="container mx-auto px-4 max-w-3xl relative z-10">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 sm:mb-8 animate-fade-in">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="gap-2 bg-white/90 hover:bg-white hover:-translate-x-1 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm"
-          >
+        <div className="flex items-center justify-between mb-8">
+          <Button variant="ghost" onClick={onBack} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Button>
-
-          <div className="text-center">
-            <Shuffle
-              text="🎭 Hangman ☠️"
-              tag="h1"
-              className="text-3xl sm:text-5xl font-black bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent drop-shadow-lg"
-              style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
-              shuffleDirection="right"
-              duration={0.5}
-              stagger={0.05}
-              triggerOnce={false}
-              threshold={0}
-            />
-            <p
-              className="text-xs sm:text-sm text-orange-800 font-bold mt-1"
-              style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
-            >
-              Tebak kata sebelum terlambat!
-            </p>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={loadNewWord}
-            className="bg-white/90 hover:bg-white hover:rotate-180 transition-all duration-500 shadow-lg hover:shadow-xl backdrop-blur-sm"
-          >
-            <RotateCcw className="h-5 w-5 text-orange-600" />
+          
+          <h1 className="text-3xl">Hangman</h1>
+          
+          <Button variant="ghost" size="icon" onClick={loadNewWord}>
+            <RotateCcw className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 animate-slide-up">
-          <Card className="p-3 sm:p-4 text-center bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="text-2xl sm:text-3xl mb-1 font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              {score}
-            </div>
-            <div className="text-xs sm:text-sm text-green-700 font-bold">
-              ✅ Kata Berhasil
-            </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card className="p-4 text-center">
+            <div className="text-2xl mb-1 text-green-600">{score}</div>
+            <div className="text-sm text-gray-600">Kata Berhasil</div>
           </Card>
-          <Card className="p-3 sm:p-4 text-center bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-400 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="flex gap-1 justify-center mb-2">
+          <Card className="p-4 text-center">
+            <div className="flex gap-1 justify-center mb-1">
               {Array.from({ length: MAX_WRONG }).map((_, i) => (
                 <Heart
                   key={i}
-                  className={`h-5 w-5 transition-all duration-300 ${
+                  className={`h-5 w-5 ${
                     i < MAX_WRONG - wrongGuesses
-                      ? "fill-red-500 text-red-500 animate-pulse"
-                      : "text-gray-300"
+                      ? 'fill-red-500 text-red-500'
+                      : 'text-gray-300'
                   }`}
                 />
               ))}
             </div>
-            <div className="text-xs sm:text-sm text-red-700 font-bold">
-              ❤️ Nyawa
-            </div>
+            <div className="text-sm text-gray-600">Nyawa</div>
           </Card>
-          <Card
-            className={`p-3 sm:p-4 text-center border-2 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ${
-              wrongGuesses >= 4
-                ? "bg-gradient-to-br from-red-100 to-orange-100 border-red-500 animate-pulse"
-                : "bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-400"
-            }`}
-          >
-            <div
-              className={`text-2xl sm:text-3xl mb-1 font-black ${
-                wrongGuesses >= 4 ? "text-red-600" : "text-blue-600"
-              }`}
-            >
-              {wrongGuesses}/{MAX_WRONG}
-            </div>
-            <div
-              className={`text-xs sm:text-sm font-bold ${
-                wrongGuesses >= 4 ? "text-red-700" : "text-blue-700"
-              }`}
-            >
-              ❌ Kesalahan
-            </div>
+          <Card className="p-4 text-center">
+            <div className="text-2xl mb-1">{wrongGuesses}/{MAX_WRONG}</div>
+            <div className="text-sm text-gray-600">Kesalahan</div>
           </Card>
         </div>
 
         {/* Game Area */}
-        <Card className="p-6 sm:p-8 mb-6 bg-white border-4 border-orange-200 shadow-2xl hover:shadow-orange-200/50 transition-all duration-300 animate-bounce-in">
+        <Card className="p-8 mb-6">
           <div className="text-center mb-6">
-            <div className="inline-block px-4 py-2 bg-gradient-to-r from-orange-400 to-amber-400 text-black font-bold rounded-full text-sm mb-4 shadow-lg animate-pulse">
-              🏷️ {currentWord.category}
+            <div className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm mb-4">
+              {currentWord.category}
             </div>
-            <div className="text-gray-700 mb-6 font-semibold text-sm sm:text-base">
-              💡 Hint: {currentWord.hint}
-            </div>
+            <div className="text-gray-600 mb-6">Hint: {currentWord.hint}</div>
           </div>
 
           {renderHangman()}
@@ -351,63 +183,25 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
           </div>
 
           {gameOver && (
-            <div className="mb-6 text-center animate-bounce-in">
+            <div className="mb-6 text-center">
               {won ? (
-                <div className="p-6 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 border-4 border-green-700 rounded-2xl shadow-2xl">
-                  <div className="text-6xl mb-3 animate-bounce">🎉</div>
-                  <p
-                    className="text-black text-2xl font-black drop-shadow-lg mb-2"
-                    style={{
-                      fontFamily: '"Impact", "Arial Black", sans-serif',
-                    }}
-                  >
-                    SELAMAT!
-                  </p>
-                  <p
-                    className="text-black text-base font-bold"
-                    style={{
-                      fontFamily: '"Impact", "Arial Black", sans-serif',
-                    }}
-                  >
-                    Kamu berhasil menebak kata!
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800 text-lg">
+                    🎉 Selamat! Kamu berhasil menebak kata!
                   </p>
                 </div>
               ) : (
-                <div className="p-6 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 border-4 border-red-800 rounded-2xl shadow-2xl">
-                  <div className="text-6xl mb-3 animate-pulse">☠️</div>
-                  <p
-                    className="text-black text-2xl font-black drop-shadow-lg mb-3"
-                    style={{
-                      fontFamily: '"Impact", "Arial Black", sans-serif',
-                    }}
-                  >
-                    GAME OVER!
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 text-lg mb-2">
+                    ❌ Game Over!
                   </p>
-                  <p
-                    className="text-black text-sm font-semibold mb-2"
-                    style={{
-                      fontFamily: '"Impact", "Arial Black", sans-serif',
-                    }}
-                  >
-                    Kata yang benar:
-                  </p>
-                  <p
-                    className="text-black text-3xl font-black drop-shadow-lg"
-                    style={{
-                      fontFamily: '"Impact", "Arial Black", sans-serif',
-                    }}
-                  >
-                    {currentWord.word}
+                  <p className="text-red-700">
+                    Kata yang benar: <span className="text-xl">{currentWord.word}</span>
                   </p>
                 </div>
               )}
-              <Button
-                onClick={loadNewWord}
-                className="mt-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-black font-black shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110"
-                size="lg"
-                style={{ fontFamily: '"Impact", "Arial Black", sans-serif' }}
-              >
-                🎮 Main Kata Baru
+              <Button onClick={loadNewWord} className="mt-4" size="lg">
+                Main Kata Baru
               </Button>
             </div>
           )}
@@ -423,20 +217,20 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
                 {row.map((letter) => {
                   const isGuessed = guessedLetters.includes(letter);
                   const isCorrect = currentWord.word.includes(letter);
-
+                  
                   return (
                     <Button
                       key={letter}
                       onClick={() => handleGuess(letter)}
                       disabled={isGuessed || gameOver}
-                      className={`w-10 h-10 p-0 font-black text-base transition-all duration-300 ${
+                      className={`w-10 h-10 p-0 ${
                         isGuessed
                           ? isCorrect
-                            ? "bg-gradient-to-br from-green-500 to-emerald-600 hover:bg-green-500 text-black shadow-lg animate-bounce-in"
-                            : "bg-gradient-to-br from-red-500 to-rose-600 hover:bg-red-500 text-black shadow-lg animate-bounce-in"
-                          : "hover:scale-110 hover:bg-blue-50 hover:border-blue-400"
+                            ? 'bg-green-500 hover:bg-green-500'
+                            : 'bg-red-500 hover:bg-red-500'
+                          : ''
                       }`}
-                      variant={isGuessed ? "default" : "outline"}
+                      variant={isGuessed ? 'default' : 'outline'}
                     >
                       {letter}
                     </Button>
@@ -448,27 +242,13 @@ export function HangmanGame({ onBack }: HangmanGameProps) {
         </Card>
 
         {/* Instructions */}
-        <Card className="p-6 bg-gradient-to-r from-orange-100 via-amber-100 to-yellow-100 border-4 border-orange-300 shadow-xl animate-slide-up animation-delay-100">
-          <h3 className="mb-4 text-lg font-black text-orange-800 flex items-center gap-2">
-            🎮 Cara Bermain:
-          </h3>
-          <ul className="space-y-2 text-xs sm:text-sm text-gray-800 font-semibold">
-            <li className="flex items-start gap-2 bg-white/60 p-2 rounded-lg">
-              <span className="text-orange-600 font-black text-lg">•</span>
-              <span>Tebak huruf satu per satu untuk menemukan kata</span>
-            </li>
-            <li className="flex items-start gap-2 bg-white/60 p-2 rounded-lg">
-              <span className="text-amber-600 font-black text-lg">•</span>
-              <span>Maksimal 6 kesalahan sebelum game over</span>
-            </li>
-            <li className="flex items-start gap-2 bg-white/60 p-2 rounded-lg">
-              <span className="text-yellow-600 font-black text-lg">•</span>
-              <span>Setiap kesalahan menambah bagian hangman</span>
-            </li>
-            <li className="flex items-start gap-2 bg-white/60 p-2 rounded-lg">
-              <span className="text-orange-500 font-black text-lg">•</span>
-              <span>Tebak kata sebelum hangman lengkap!</span>
-            </li>
+        <Card className="p-6 bg-orange-100 border-primary/20">
+          <h3 className="mb-3">📝 Cara Bermain:</h3>
+          <ul className="space-y-1 text-sm text-gray-700">
+            <li>• Tebak huruf satu per satu untuk menemukan kata</li>
+            <li>• Maksimal 6 kesalahan sebelum game over</li>
+            <li>• Gunakan hint jika kesulitan (tersedia 2x)</li>
+            <li>• Jawab 10 kata untuk menyelesaikan game</li>
           </ul>
         </Card>
       </div>

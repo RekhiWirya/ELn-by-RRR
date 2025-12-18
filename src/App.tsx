@@ -35,7 +35,7 @@ type Page =
   | "game-crossword";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("login");
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [user, setUser] = useState<{
@@ -53,33 +53,28 @@ export default function App() {
     }
   };
 
-  const handleLogin = (userData: { name: string; email: string }) => {
-    setUser(userData);
-    setCurrentPage("home");
-  };
-
   const handleSelectCourse = (courseId: number) => {
     setSelectedCourseId(courseId);
-    setCurrentPage("course-detail");
+    setCurrentPage('course-detail');
   };
 
   const handleStartLesson = (lessonId: number) => {
     setSelectedLessonId(lessonId);
-    setCurrentPage("lesson");
+    setCurrentPage('lesson');
   };
 
   const handleBackToCourse = () => {
-    setCurrentPage("course-detail");
+    setCurrentPage('course-detail');
   };
 
   const handleBackToCourses = () => {
-    setCurrentPage("courses");
+    setCurrentPage('courses');
     setSelectedCourseId(null);
   };
 
   const handleLessonComplete = () => {
-    toast.success("Selamat! Lesson berhasil diselesaikan! 🎉");
-    setCurrentPage("course-detail");
+    toast.success('Selamat! Lesson berhasil diselesaikan! 🎉');
+    setCurrentPage('course-detail');
   };
 
   const handleSelectGame = (gameId: string) => {
@@ -87,7 +82,7 @@ export default function App() {
   };
 
   const handleBackToGames = () => {
-    setCurrentPage("games");
+    setCurrentPage('games');
   };
 
   return (
